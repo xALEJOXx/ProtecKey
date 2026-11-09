@@ -414,16 +414,17 @@ function ProtecKey() {
                       </span>
 
                       <h1>
-                        Entiende tu red.
+                        Protege la inteligencia artificial.
                         <br />
-                        <span>Descubre posibles amenazas.</span>
+                        <span>Detecta posibles amenazas.</span>
                       </h1>
 
                       <p>
-                        ProtecKey te ayuda a analizar datos de tráfico
-                        de red y comprender los resultados de manera
-                        clara, incluso si no tienes experiencia
-                        en ciberseguridad.
+                        Identifica patrones sospechosos en datos 
+                        de tráfico de red mediante aprendizaje automático,
+                        ayudándote a encontrar posibles amenazas 
+                        que podrían comprometer la seguridad de entornos de
+                        inteligencia artificial.
                       </p>
 
                       <button
