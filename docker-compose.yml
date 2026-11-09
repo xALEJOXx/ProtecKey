@@ -1,0 +1,106 @@
+
+services:
+
+  # BASE DE DATOS
+  postgres:
+    image: postgres:17
+    container_name: proteckey-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: proteckey
+      POSTGRES_USER: proteckey
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Configura POSTGRES_PASSWORD en .env}
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./services/database/init/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U proteckey -d proteckey"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # DETECTION SERVICE
+  detection-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: proteckey-detection
+    command: uvicorn services.detection_service.main:app --host 0.0.0.0 --port 8002
+    expose:
+      - "8002"
+
+  # DATA SERVICE
+  data-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: proteckey-data
+    command: uvicorn services.data_service.main:app --host 0.0.0.0 --port 8001
+    environment:
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_NAME: proteckey
+      DB_USER: proteckey
+      DB_PASSWORD: ${POSTGRES_PASSWORD:?Configura POSTGRES_PASSWORD en .env}
+      DETECTION_SERVICE_URL: http://detection-service:8002
+    depends_on:
+      postgres:
+        condition: service_healthy
+      detection-service:
+        condition: service_started
+    expose:
+      - "8001"
+
+  # EVALUATION SERVICE
+  evaluation-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: proteckey-evaluation
+    command: uvicorn services.evaluation_service.main:app --host 0.0.0.0 --port 8003
+    expose:
+      - "8003"
+
+  # API GATEWAY
+  api-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: proteckey-gateway
+    command: uvicorn services.api_gateway.main:app --host 0.0.0.0 --port 8000
+    environment:
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_NAME: proteckey
+      DB_USER: proteckey
+      DB_PASSWORD: ${POSTGRES_PASSWORD:?Configura POSTGRES_PASSWORD en .env}
+      DATA_SERVICE_URL: http://data-service:8001
+      EVALUATION_SERVICE_URL: http://evaluation-service:8003
+    depends_on:
+      postgres:
+        condition: service_healthy
+      data-service:
+        condition: service_started
+      evaluation-service:
+        condition: service_started
+    ports:
+      - "8000:8000"
+
+  # FRONTEND REACT
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: proteckey-frontend
+    command: npm run dev -- --host 0.0.0.0
+    environment:
+      API_GATEWAY_URL: http://api-gateway:8000
+    depends_on:
+      - api-gateway
+    ports:
+      - "5173:5173"
+
+volumes:
+  postgres_data:

@@ -1,0 +1,46 @@
+# ==========================================
+# ProtecKey - Archivos ignorados por Git
+# ==========================================
+
+# Entorno virtual de Python
+.venv/
+venv/
+
+# Variables de entorno / contraseñas
+.env
+.env.*
+!.env.example
+
+# Caché de Python
+__pycache__/
+*.py[cod]
+
+# Archivos temporales
+*.log
+*.tmp
+
+# Jupyter / Colab
+.ipynb_checkpoints/
+
+# Visual Studio Code
+.vscode/
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# Dependencias del frontend
+node_modules/
+frontend/dist/
+
+# Archivos de entorno
+.env
+.env.*
+!.env.example
+
+# Archivos temporales de pruebas
+.pytest_cache/
+.coverage
+
+# Archivos locales de Docker
+*.log

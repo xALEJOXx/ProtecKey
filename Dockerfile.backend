@@ -1,0 +1,29 @@
+
+# Imagen base de Python
+FROM python:3.13-slim
+
+# Directorio principal dentro del contenedor
+WORKDIR /app
+
+# Librerías del sistema necesarias para LightGBM
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    libgomp1 && \
+    rm -rf /var/lib/apt/lists/*
+
+# Copiar las dependencias de Python
+COPY requirements.txt .
+
+# Instalar las dependencias
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copiar los microservicios
+COPY services/ ./services/
+
+# Copiar el modelo entrenado
+COPY models/ ./models/
+
+# Configurar Python
+ENV PYTHONUNBUFFERED=1
+
+# El comando de inicio se definirá en Docker Compose
