@@ -13,6 +13,7 @@ export default function NetworkPulse() {
   const pendientesRef = useRef(0);
   const ultimoIdRef = useRef(null);
   const [muestra, setMuestra] = useState(0);
+  const [ultimoValor, setUltimoValor] = useState(0);
 
   useEffect(() => {
     if (flujos.length === 0) return;
@@ -27,10 +28,8 @@ export default function NetworkPulse() {
 
     const paquetes = nuevos.reduce(
       (total, flujo) =>
-        total +
-        (Number(flujo.spkts) || 0) +
-        (Number(flujo.dpkts) || 0),
-      0
+        total + (Number(flujo.spkts) || 0) + (Number(flujo.dpkts) || 0),
+      0,
     );
 
     pendientesRef.current += paquetes;
@@ -41,11 +40,9 @@ export default function NetworkPulse() {
       const cantidad = pendientesRef.current;
       pendientesRef.current = 0;
 
-      datosRef.current = [
-        ...datosRef.current.slice(1),
-        cantidad
-      ];
+      datosRef.current = [...datosRef.current.slice(1), cantidad];
 
+      setUltimoValor(cantidad);
       setMuestra((valor) => valor + 1);
     }, 1000);
 
@@ -81,7 +78,7 @@ export default function NetworkPulse() {
 
     const puntos = datos.map((valor, indice) => ({
       x: (indice / (VENTANA - 1)) * ANCHO,
-      y: ALTO - 15 - (valor / maximo) * (ALTO - 35)
+      y: ALTO - 15 - (valor / maximo) * (ALTO - 35),
     }));
 
     ctx.beginPath();
@@ -106,31 +103,32 @@ export default function NetworkPulse() {
   }, [muestra]);
 
   const conectado = estado === "Conectado";
-  const ultimoValor = datosRef.current[VENTANA - 1];
 
   return (
     <section className="pk-pulse">
       <div className="pk-pulse-header">
         <div>
-          <span className="pk-pulse-eyebrow">
-            TELEMETRÍA DE RED
-          </span>
+          <span className="pk-pulse-eyebrow">TELEMETRÍA DE RED</span>
           <h2>Network Pulse</h2>
           <p>
-            Actividad de paquetes asociada a los flujos
-            recibidos durante los últimos 60 segundos.
+            Actividad de paquetes asociada a los flujos recibidos durante los
+            últimos 60 segundos.
           </p>
         </div>
 
-        <div className={`pk-pulse-status ${
-          conectado ? "online" : "offline"
-        }`}>
+        <div className={`pk-pulse-status ${conectado ? "online" : "offline"}`}>
           <span className="pk-pulse-dot" />
           {conectado ? "Conectado" : estado}
         </div>
       </div>
 
       <div className="pk-pulse-chart">
+        {estado !== "Conectado" && (
+          <div className="soc-chart-unavailable">
+            <strong>Telemetría no disponible</strong>
+            <span>Esperando la conexión con el sensor de red.</span>
+          </div>
+        )}
         <canvas
           ref={canvasRef}
           width={ANCHO}

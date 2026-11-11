@@ -1,9 +1,9 @@
-import { monitorProxy } from "./monitor-proxy.js";
+﻿import { monitorProxy } from "./monitor-proxy.js";
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
-export default defineConfig({
-  plugins: [react(), monitorProxy()],
+export default defineConfig(({ command }) => ({
+  plugins: [react(), ...(command === 'serve' ? [monitorProxy()] : [])],
 
   server: {
     host: '0.0.0.0',
@@ -74,4 +74,4 @@ export default defineConfig({
       },
     },
   },
-})
+}))

@@ -2,7 +2,7 @@ import "./MLAlerts.css";
 import { useEffect, useState } from "react";
 
 const nombresMetricas = {
-  dur: "Duraci?n del flujo (segundos)",
+  dur: "Duración del flujo (segundos)",
   rate: "Tasa de paquetes",
   dload: "Carga de destino",
   dpkts: "Paquetes hacia destino",
@@ -27,30 +27,31 @@ function formatearFecha(valor) {
   return valor ? new Date(valor).toLocaleString("es-CO") : "No disponible";
 }
 
-
 function EtiquetaGravedad({ analisis }) {
   const estilos = {
     informativa: { texto: "INFORMATIVA", color: "#4ade80" },
     advertencia: { texto: "ADVERTENCIA", color: "#facc15" },
     alta: { texto: "ALTA", color: "#f87171" },
-    critica: { texto: "CRITICA", color: "#ef4444" }
+    critica: { texto: "CRITICA", color: "#ef4444" },
   };
 
   const estado = estilos[analisis?.gravedad] || {
     texto: "SIN CLASIFICAR",
-    color: "#94a3b8"
+    color: "#94a3b8",
   };
 
   return (
-    <span style={{
-      display: "inline-block",
-      padding: "5px 10px",
-      borderRadius: 8,
-      border: `1px solid ${estado.color}`,
-      color: estado.color,
-      fontSize: 11,
-      fontWeight: 700
-    }}>
+    <span
+      style={{
+        display: "inline-block",
+        padding: "5px 10px",
+        borderRadius: 8,
+        border: `1px solid ${estado.color}`,
+        color: estado.color,
+        fontSize: 11,
+        fontWeight: 700,
+      }}
+    >
       {estado.texto}
     </span>
   );
@@ -74,12 +75,14 @@ function AnalisisProteccion({ analisis }) {
     : [];
 
   return (
-    <div style={{
-      border: "1px solid #334155",
-      borderRadius: 12,
-      padding: 18,
-      margin: "18px 0"
-    }}>
+    <div
+      style={{
+        border: "1px solid #334155",
+        borderRadius: 12,
+        padding: 18,
+        margin: "18px 0",
+      }}
+    >
       <h3>Analisis de seguridad de ProtecKey</h3>
 
       <div style={{ marginBottom: 14 }}>
@@ -110,41 +113,43 @@ function AnalisisProteccion({ analisis }) {
         </>
       )}
 
-      <div style={{
-        marginTop: 16,
-        padding: 12,
-        background: "rgba(15, 23, 42, 0.6)",
-        borderRadius: 8
-      }}>
+      <div
+        style={{
+          marginTop: 16,
+          padding: 12,
+          background: "rgba(15, 23, 42, 0.6)",
+          borderRadius: 8,
+        }}
+      >
         <strong>Estado de proteccion</strong>
 
         <p style={{ margin: "8px 0 0" }}>
-          Modo: {analisis.modo === "simulacion"
+          Modo:{" "}
+          {analisis.modo === "simulacion"
             ? "Simulacion"
-            : (analisis.modo || "No disponible")}
+            : analisis.modo || "No disponible"}
         </p>
 
         <p style={{ margin: "5px 0 0" }}>
-          Bloqueo autorizado: {analisis.bloqueo_autorizado
-            ? "Si"
-            : "No"}
+          Bloqueo autorizado: {analisis.bloqueo_autorizado ? "Si" : "No"}
         </p>
 
         {analisis.modo === "simulacion" && (
-          <p style={{
-            marginTop: 10,
-            color: "#facc15",
-            fontSize: 13
-          }}>
-            ProtecKey no ha ejecutado ningun bloqueo real.
-            La respuesta automatica permanece en simulacion.
+          <p
+            style={{
+              marginTop: 10,
+              color: "#facc15",
+              fontSize: 13,
+            }}
+          >
+            ProtecKey no ha ejecutado ningun bloqueo real. La respuesta
+            automatica permanece en simulacion.
           </p>
         )}
       </div>
     </div>
   );
 }
-
 
 function DecisionProteccion({ analisis }) {
   const decision = analisis?.decision_proteccion;
@@ -160,17 +165,19 @@ function DecisionProteccion({ analisis }) {
   const nombres = {
     no_bloquear: "No bloquear",
     revision_requerida: "Revision requerida",
-    solo_monitorear: "Continuar monitoreo"
+    solo_monitorear: "Continuar monitoreo",
   };
 
   return (
-    <div style={{
-      marginTop: 18,
-      padding: 16,
-      border: "1px solid #334155",
-      borderRadius: 12,
-      background: "rgba(15, 23, 42, 0.35)"
-    }}>
+    <div
+      style={{
+        marginTop: 18,
+        padding: 16,
+        border: "1px solid #334155",
+        borderRadius: 12,
+        background: "rgba(15, 23, 42, 0.35)",
+      }}
+    >
       <h4 style={{ marginTop: 0 }}>Decision de proteccion</h4>
 
       <p>
@@ -198,13 +205,14 @@ function DecisionProteccion({ analisis }) {
         {decision.bloqueo_ejecutado ? "Si" : "No"}
       </p>
 
-      <p style={{
-        marginBottom: 0,
-        color: "#facc15",
-        fontSize: 12
-      }}>
-        Esta decision es informativa.
-        ProtecKey permanece en modo simulacion.
+      <p
+        style={{
+          marginBottom: 0,
+          color: "#facc15",
+          fontSize: 12,
+        }}
+      >
+        Esta decision es informativa. ProtecKey permanece en modo simulacion.
       </p>
     </div>
   );
@@ -212,6 +220,7 @@ function DecisionProteccion({ analisis }) {
 
 export default function MLAlerts() {
   const [alertas, setAlertas] = useState([]);
+  const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
   const [ultimaRevision, setUltimaRevision] = useState(null);
   const [detalle, setDetalle] = useState(null);
@@ -224,10 +233,9 @@ export default function MLAlerts() {
 
     async function consultarAlertas() {
       try {
-        const respuesta = await fetch(
-          "/api/ml/history?limite=100&pagina=1",
-          { signal: controlador.signal }
-        );
+        const respuesta = await fetch("/api/ml/history?limite=100&pagina=1", {
+          signal: controlador.signal,
+        });
 
         if (!respuesta.ok) {
           throw new Error(`HTTP ${respuesta.status}`);
@@ -239,7 +247,7 @@ export default function MLAlerts() {
         const sospechosas = (datos.records || []).filter(
           (registro) =>
             Number(registro.prediccion) === 1 &&
-            String(registro.protocolo).toUpperCase() !== "TEST"
+            String(registro.protocolo).toUpperCase() !== "TEST",
         );
 
         setAlertas(sospechosas);
@@ -249,6 +257,8 @@ export default function MLAlerts() {
         if (activo && err.name !== "AbortError") {
           setError("No se pudieron actualizar las alertas.");
         }
+      } finally {
+        if (activo) setCargando(false);
       }
     }
 
@@ -289,7 +299,7 @@ export default function MLAlerts() {
       setDetalle(datos);
     } catch (err) {
       setErrorDetalle(
-        `No se pudo consultar la detecci?n #${id}. ${err.message}`
+        `No se pudo consultar la detección #${id}. ${err.message}`,
       );
     } finally {
       setCargandoDetalle(false);
@@ -300,28 +310,29 @@ export default function MLAlerts() {
     <section className="pk-ml-alerts">
       <div className="pk-ml-alerts-header">
         <div>
-          <span className="pk-ml-alerts-eyebrow">
-            VIGILANCIA INTELIGENTE
-          </span>
+          <span className="pk-ml-alerts-eyebrow">VIGILANCIA INTELIGENTE</span>
           <h2>Alertas de seguridad</h2>
           <p>
-            Conexiones clasificadas como sospechosas por el
-            modelo experimental LightGBM.
+            Conexiones clasificadas como sospechosas por el modelo experimental
+            LightGBM.
           </p>
         </div>
 
-        <div className="pk-ml-alerts-counter">
-          <strong>{alertas.length}</strong>
+        <div
+          className={`pk-ml-alerts-counter ${error || cargando ? "soc-unavailable" : ""}`}
+        >
+          <strong>{cargando || error ? "—" : alertas.length}</strong>
           <span>Alertas recientes</span>
         </div>
       </div>
 
       {error && <p role="alert">{error}</p>}
 
-      {!error && alertas.length === 0 && (
+      {cargando && <p role="status">Consultando alertas…</p>}
+      {!cargando && !error && alertas.length === 0 && (
         <div className="pk-ml-alerts-empty">
-          No se encontraron conexiones sospechosas entre las
-          ?ltimas 100 predicciones.
+          No se encontraron conexiones sospechosas entre las últimas 100
+          predicciones.
         </div>
       )}
 
@@ -332,15 +343,13 @@ export default function MLAlerts() {
               <strong>Actividad sospechosa #{alerta.id}</strong>
               <EtiquetaGravedad analisis={alerta.analisis_amenaza} />
               <span>
-                {formatearNumero(
-                  Number(alerta.probabilidad_ataque) * 100
-                )} %
+                {formatearNumero(Number(alerta.probabilidad_ataque) * 100)} %
               </span>
             </div>
 
             <p>
               {alerta.ip_origen || "Desconocida"}
-              {" ? "}
+              {" → "}
               {alerta.ip_destino || "Desconocida"}
             </p>
 
@@ -361,10 +370,10 @@ export default function MLAlerts() {
       </div>
 
       <p className="pk-ml-alerts-note">
-        Las alertas son experimentales y requieren verificaci?n.
-        No confirman ataques.
+        Las alertas son experimentales y requieren verificación. No confirman
+        ataques.
         {ultimaRevision && (
-          <> ?ltima revisi?n: {ultimaRevision.toLocaleTimeString("es-CO")}.</>
+          <> Última revisión: {ultimaRevision.toLocaleTimeString("es-CO")}.</>
         )}
       </p>
 
@@ -381,14 +390,14 @@ export default function MLAlerts() {
             className="pk-ml-modal"
             role="dialog"
             aria-modal="true"
-            aria-label={`Detalle de detecci?n ${detalle.id}`}
+            aria-label={`Detalle de detección ${detalle.id}`}
           >
             <div className="pk-ml-modal-header">
               <div>
                 <span className="pk-ml-alerts-eyebrow">
-                  AN?LISIS DE CONEXI?N
+                  ANÁLISIS DE CONEXIÓN
                 </span>
-                <h2>Detecci?n #{detalle.id}</h2>
+                <h2>Detección #{detalle.id}</h2>
               </div>
 
               <button
@@ -397,12 +406,12 @@ export default function MLAlerts() {
                 onClick={() => setDetalle(null)}
                 aria-label="Cerrar detalles"
               >
-                ?
+                ×
               </button>
             </div>
 
             {cargandoDetalle && (
-              <p>Consultando informaci?n de la detecci?n...</p>
+              <p>Consultando información de la detección...</p>
             )}
 
             {errorDetalle && (
@@ -416,9 +425,8 @@ export default function MLAlerts() {
                 <div className="pk-ml-detail-probability">
                   <span>Probabilidad estimada de ataque</span>
                   <strong>
-                    {formatearNumero(
-                      Number(detalle.probabilidad_ataque) * 100
-                    )} %
+                    {formatearNumero(Number(detalle.probabilidad_ataque) * 100)}{" "}
+                    %
                   </strong>
                   <div className="pk-ml-probability-track">
                     <div
@@ -428,8 +436,8 @@ export default function MLAlerts() {
                           0,
                           Math.min(
                             100,
-                            Number(detalle.probabilidad_ataque) * 100
-                          )
+                            Number(detalle.probabilidad_ataque) * 100,
+                          ),
                         )}%`,
                       }}
                     />
@@ -439,7 +447,7 @@ export default function MLAlerts() {
                 <AnalisisProteccion analisis={detalle.analisis_amenaza} />
                 <DecisionProteccion analisis={detalle.analisis_amenaza} />
 
-                <h3>Informaci?n de la conexi?n</h3>
+                <h3>Información de la conexión</h3>
                 <div className="pk-ml-detail-grid">
                   <div>
                     <span>IP de origen</span>
@@ -467,7 +475,7 @@ export default function MLAlerts() {
                   </div>
                 </div>
 
-                <h3>Caracter?sticas analizadas por LightGBM</h3>
+                <h3>Características analizadas por LightGBM</h3>
                 <div className="pk-ml-metrics">
                   {Object.entries(detalle.caracteristicas).map(
                     ([clave, valor]) => (
@@ -479,14 +487,14 @@ export default function MLAlerts() {
                             : String(valor ?? "No disponible")}
                         </strong>
                       </div>
-                    )
+                    ),
                   )}
                 </div>
 
                 {detalle.estado_tcp_info &&
                   Object.keys(detalle.estado_tcp_info).length > 0 && (
                     <>
-                      <h3>Informaci?n del estado TCP</h3>
+                      <h3>Información del estado TCP</h3>
                       <div className="pk-ml-metrics">
                         {Object.entries(detalle.estado_tcp_info).map(
                           ([clave, valor]) => (
@@ -498,17 +506,17 @@ export default function MLAlerts() {
                                   : String(valor)}
                               </strong>
                             </div>
-                          )
+                          ),
                         )}
                       </div>
                     </>
                   )}
 
                 <p className="pk-ml-detail-disclaimer">
-                  Esta es una clasificaci?n experimental de LightGBM.
-                  Los valores describen el flujo de red, pero no
-                  demuestran por s? solos que exista un ataque ni
-                  identifican la aplicaci?n responsable.
+                  Esta es una clasificaci?n experimental de LightGBM. Los
+                  valores describen el flujo de red, pero no demuestran por s?
+                  solos que exista un ataque ni identifican la aplicaci?n
+                  responsable.
                 </p>
               </>
             )}

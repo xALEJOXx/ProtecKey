@@ -1,11 +1,11 @@
-
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   BrowserRouter,
   NavLink,
   Routes,
   Route,
   useNavigate,
+  useLocation,
 } from "react-router-dom";
 
 import IndividualAnalysis from "./components/IndividualAnalysis";
@@ -17,7 +17,11 @@ import LiveMonitor from "./components/LiveMonitor";
 import { LiveMonitorProvider } from "./components/LiveMonitorContext";
 import NetworkHistory from "./components/NetworkHistory";
 import MLHistory from "./components/MLHistory";
-import MLAlerts from "./components/MLAlerts";
+import SOCIcon from "./components/SOCIcon";
+import SOCDashboard from "./components/SOCDashboard";
+import LearningLab from "./components/LearningLab";
+import HistoryWorkspace from "./components/HistoryWorkspace";
+import "./soc.css";
 
 const API_URL = "";
 
@@ -32,7 +36,13 @@ const opciones = [
 
 function ProtecKey() {
   const navegar = useNavigate();
-  
+  const { pathname } = useLocation();
+  const [menuAbierto, setMenuAbierto] = useState(false);
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  const [errorHistorial, setErrorHistorial] = useState("");
+
   const [estado, setEstado] = useState("Comprobando...");
   const [historial, setHistorial] = useState([]);
   const [busquedaHistorial, setBusquedaHistorial] = useState("");
@@ -46,23 +56,28 @@ function ProtecKey() {
   const [tipoUltimoResultado, setTipoUltimoResultado] = useState("lote");
 
   useEffect(() => {
-    comprobarAPI();
-    cargarHistorial();
-  }, []);
+    if (!registroSeleccionado) return;
+    const cerrar = (e) => {
+      if (e.key === "Escape") setRegistroSeleccionado(null);
+    };
+    window.addEventListener("keydown", cerrar);
+    return () => window.removeEventListener("keydown", cerrar);
+  }, [registroSeleccionado]);
 
-  const comprobarAPI = async () => {
+  const comprobarAPI = useCallback(async () => {
     try {
       const respuesta = await fetch(`${API_URL}/health`);
       if (!respuesta.ok) throw new Error("API no disponible");
+      const datos = await respuesta.json();
+      if (!datos || typeof datos !== "object")
+        throw new Error("Respuesta no válida");
       setEstado("Activo");
     } catch {
       setEstado("Sin conexión");
     }
-  };
+  }, []);
 
-  const cargarHistorial = async () => {
-    setCargando(true);
-
+  const cargarHistorial = useCallback(async () => {
     try {
       const respuesta = await fetch(`${API_URL}/api/history`);
       if (!respuesta.ok) throw new Error("Error consultando historial");
@@ -71,13 +86,26 @@ function ProtecKey() {
 
       if (datos.status === "success") {
         setHistorial(datos.records ?? []);
+        setErrorHistorial("");
+      } else {
+        throw new Error("Respuesta de historial no válida");
       }
     } catch (error) {
+      setErrorHistorial("No se pudo actualizar el historial individual.");
       console.error("Error cargando historial:", error);
     } finally {
       setCargando(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    // Cancel the initial task on unmount, including the StrictMode probe.
+    const initialTask = setTimeout(() => {
+      comprobarAPI();
+      cargarHistorial();
+    }, 0);
+    return () => clearTimeout(initialTask);
+  }, [comprobarAPI, cargarHistorial]);
 
   const actualizarHistoriales = () => {
     cargarHistorial();
@@ -91,36 +119,21 @@ function ProtecKey() {
     navegar("/resultados");
   };
 
-  const totalIndividuales = historial.length;
-
-  const totalNormales = historial.filter(
-    (registro) => Number(registro.prediction) === 0
-  ).length;
-
-  const totalAmenazas = historial.filter(
-    (registro) => Number(registro.prediction) === 1
-  ).length;
-
-  const totalEvaluados = historial.filter(
-    (registro) =>
-      ["TP", "TN", "FP", "FN"].includes(registro.evaluation)
-  ).length;
-
-  const porcentajeNormal = totalIndividuales > 0
-    ? (totalNormales / totalIndividuales) * 100
-    : 0;
-
-  const porcentajeAmenazas = totalIndividuales > 0
-    ? (totalAmenazas / totalIndividuales) * 100
-    : 0;
-
-
   const historialFiltrado = historial.filter((registro) => {
     const busqueda = busquedaHistorial.trim().replace(/^#/, "");
 
     const coincideBusqueda =
       busqueda === "" ||
-      String(registro.id).includes(busqueda);
+      [
+        registro.id,
+        registro.classification,
+        registro.evaluation,
+        registro.fecha_hora,
+      ].some((valor) =>
+        String(valor ?? "")
+          .toLowerCase()
+          .includes(busqueda.toLowerCase()),
+      );
 
     const prediccion = Number(registro.prediction);
 
@@ -136,7 +149,6 @@ function ProtecKey() {
     return coincideBusqueda && coincideFiltro;
   });
 
-
   const historialIndividual = (
     <section className="panel">
       <div className="panel-titulo">
@@ -145,7 +157,14 @@ function ProtecKey() {
           <p>Predicciones individuales guardadas en PostgreSQL.</p>
         </div>
 
-        <button onClick={cargarHistorial}>Actualizar</button>
+        <button
+          onClick={() => {
+            setCargando(true);
+            cargarHistorial();
+          }}
+        >
+          Actualizar
+        </button>
       </div>
 
       <div className="pk-history-filters">
@@ -154,8 +173,8 @@ function ProtecKey() {
 
           <input
             type="search"
-            placeholder="Buscar análisis por ID..."
-            aria-label="Buscar análisis por ID"
+            placeholder="Buscar ID, fecha, clasificación…"
+            aria-label="Buscar análisis por ID, fecha o clasificación"
             value={busquedaHistorial}
             onChange={(e) => setBusquedaHistorial(e.target.value)}
           />
@@ -167,7 +186,7 @@ function ProtecKey() {
             { valor: "normal", texto: "Normales" },
             { valor: "malicioso", texto: "Posibles amenazas" },
             { valor: "evaluados", texto: "Evaluados" },
-            { valor: "sin-evaluar", texto: "Sin evaluar" }
+            { valor: "sin-evaluar", texto: "Sin evaluar" },
           ].map((opcion) => (
             <button
               key={opcion.valor}
@@ -188,22 +207,15 @@ function ProtecKey() {
         <strong>{historial.length}</strong> análisis individuales
       </div>
 
-
+      {errorHistorial && <p role="alert">{errorHistorial}</p>}
       {cargando ? (
         <p>Cargando historial...</p>
-      ) : historial.length === 0 ? (
+      ) : errorHistorial && historial.length === 0 ? null : historial.length ===
+        0 ? (
         <p>Todavía no hay análisis individuales guardados.</p>
       ) : (
         <div className="tabla-contenedor">
           <table>
-         {historialFiltrado.length === 0 && (
-            <div className="pk-history-no-results">
-              <strong>No se encontraron análisis</strong>
-              <p>
-                Prueba con otro ID o selecciona un filtro diferente.
-              </p>
-            </div>
-          )}
             <thead>
               <tr>
                 <th>ID</th>
@@ -216,19 +228,20 @@ function ProtecKey() {
             </thead>
 
             <tbody>
+              {historialFiltrado.length === 0 && (
+                <tr>
+                  <td colSpan="6">Ningún registro coincide con los filtros.</td>
+                </tr>
+              )}
               {historialFiltrado.map((registro) => (
                 <tr key={registro.id}>
                   <td>#{registro.id}</td>
-                  <td>
-                    {new Date(registro.fecha_hora).toLocaleString()}
-                  </td>
+                  <td>{new Date(registro.fecha_hora).toLocaleString()}</td>
                   <td>{registro.prediction}</td>
                   <td>
                     <span
                       className={
-                        registro.prediction === 1
-                          ? "malicioso"
-                          : "normal"
+                        registro.prediction === 1 ? "malicioso" : "normal"
                       }
                     >
                       {registro.classification}
@@ -244,6 +257,7 @@ function ProtecKey() {
                           : registro.evaluation === "FN"
                             ? "Falso negativo (FN)"
                             : "Sin evaluar"}
+                  </td>
                   <td>
                     <button
                       type="button"
@@ -252,7 +266,6 @@ function ProtecKey() {
                     >
                       Ver detalles
                     </button>
-                  </td>
                   </td>
                 </tr>
               ))}
@@ -270,9 +283,7 @@ function ProtecKey() {
           >
             <div className="pk-history-detail-header">
               <div>
-                <span className="pk-eyebrow">
-                  DETALLES DEL ANÁLISIS
-                </span>
+                <span className="pk-eyebrow">DETALLES DEL ANÁLISIS</span>
                 <h2 id="pk-history-detail-title">
                   Registro #{registroSeleccionado.id}
                 </h2>
@@ -292,9 +303,9 @@ function ProtecKey() {
               <div>
                 <span>Fecha del análisis</span>
                 <strong>
-                  {new Date(
-                    registroSeleccionado.fecha_hora
-                  ).toLocaleString("es-CO")}
+                  {new Date(registroSeleccionado.fecha_hora).toLocaleString(
+                    "es-CO",
+                  )}
                 </strong>
               </div>
 
@@ -325,7 +336,7 @@ function ProtecKey() {
                     TP: "Verdadero positivo (TP)",
                     TN: "Verdadero negativo (TN)",
                     FP: "Falso positivo (FP)",
-                    FN: "Falso negativo (FN)"
+                    FN: "Falso negativo (FN)",
                   }[registroSeleccionado.evaluation] || "Sin evaluar"}
                 </strong>
               </div>
@@ -338,7 +349,7 @@ function ProtecKey() {
                   TP: "El modelo identificó correctamente un registro etiquetado como malicioso.",
                   TN: "El modelo identificó correctamente un registro etiquetado como normal.",
                   FP: "El modelo clasificó como potencialmente malicioso un registro cuya etiqueta real era normal.",
-                  FN: "El modelo clasificó como normal un registro cuya etiqueta real era maliciosa."
+                  FN: "El modelo clasificó como normal un registro cuya etiqueta real era maliciosa.",
                 }[registroSeleccionado.evaluation] ||
                   "Este análisis no tiene una etiqueta real disponible, por lo que no es posible comprobar si la predicción fue correcta."}
               </p>
@@ -360,36 +371,43 @@ function ProtecKey() {
   );
 
   return (
-    <div className="pk-layout">
+    <div className={`pk-layout ${menuAbierto ? "soc-menu-open" : ""}`}>
       <aside className="pk-sidebar">
         <div className="pk-brand">
-          <div className="pk-brand-icon">◆</div>
+          <div className="pk-brand-icon">
+            <SOCIcon name="shield" />
+          </div>
           <div>
             <strong>ProtecKey</strong>
-            <small>Seguridad inteligente</small>
+            <small>SECURITY OPERATIONS</small>
           </div>
         </div>
 
-        <div className="pk-menu-label">EXPLORAR</div>
+        <div className="pk-menu-label">WORKSPACE</div>
 
         <nav className="pk-navigation">
           {opciones.map((opcion) => (
             <NavLink
               key={opcion.ruta}
               to={opcion.ruta}
+              onClick={() => setMenuAbierto(false)}
               end={opcion.ruta === "/"}
               className={({ isActive }) =>
                 `pk-nav-link ${isActive ? "pk-nav-active" : ""}`
               }
             >
-              <span className="pk-nav-icon">{opcion.icono}</span>
+              <span className="pk-nav-icon">
+                <SOCIcon name={opcion.ruta} />
+              </span>
               <span>{opcion.nombre}</span>
             </NavLink>
           ))}
         </nav>
 
         <div className="pk-sidebar-bottom">
-          <div className="pk-status-dot" />
+          <div
+            className={`pk-status-dot ${estado === "Activo" ? "soc-connected" : "soc-disconnected"}`}
+          />
           <div>
             <strong>{estado}</strong>
             <small>Estado de la API</small>
@@ -400,11 +418,29 @@ function ProtecKey() {
       <div className="pk-main">
         <header className="pk-topbar">
           <div>
-            <span className="pk-eyebrow">CENTRO DE SEGURIDAD</span>
-            <strong>Tu espacio de análisis</strong>
+            <button
+              className="soc-menu-toggle"
+              aria-label="Abrir o cerrar navegación"
+              aria-expanded={menuAbierto}
+              onClick={() => setMenuAbierto(!menuAbierto)}
+            >
+              ☰
+            </button>
+            <span className="pk-eyebrow">WORKSPACE / </span>
+            <strong>
+              {opciones.find((opcion) => opcion.ruta === pathname)?.nombre ||
+                "ProtecKey"}
+            </strong>
           </div>
 
-          <span className="pk-topbar-brand">ProtecKey</span>
+          <span className="soc-top-status">
+            <i
+              className={
+                estado === "Activo" ? "soc-connected" : "soc-disconnected"
+              }
+            />
+            API · {estado}
+          </span>
         </header>
 
         <main className="pk-page">
@@ -414,202 +450,17 @@ function ProtecKey() {
               element={
                 <>
                   <LiveMonitor />
-                  <MLAlerts />
                 </>
               }
             />
-            <Route
-              path="/"
-              element={
-                <div className="pk-home">
-                  <section className="pk-hero">
-                    <div className="pk-hero-copy">
-                      <span className="pk-hero-tag">
-                        PROTECCIÓN INTELIGENTE
-                      </span>
-
-                      <h1>
-                        Protege la inteligencia artificial.
-                        <br />
-                        <span>Detecta posibles amenazas.</span>
-                      </h1>
-
-                      <p>
-                        Identifica patrones sospechosos en datos 
-                        de tráfico de red mediante aprendizaje automático,
-                        ayudándote a encontrar posibles amenazas 
-                        que podrían comprometer la seguridad de entornos de
-                        inteligencia artificial.
-                      </p>
-
-                      <button
-                        className="pk-primary-button"
-                        onClick={() => navegar("/analizar")}
-                      >
-                        Comenzar un análisis →
-                      </button>
-                    </div>
-
-                    <div className="pk-hero-art" aria-hidden="true">
-                      <div className="pk-orbit pk-orbit-one" />
-                      <div className="pk-orbit pk-orbit-two" />
-                      <div className="pk-shield">◆</div>
-                    </div>
-                  </section>
-
-                  <section className="pk-home-grid">
-                    <div className="pk-feature-card">
-                      <div className="pk-feature-icon">◎</div>
-                      <h3>Analiza fácilmente</h3>
-                      <p>
-                        Carga un archivo CSV y deja que ProtecKey
-                        procese sus registros.
-                      </p>
-                      <button onClick={() => navegar("/analizar")}>
-                        Ir a analizar →
-                      </button>
-                    </div>
-
-                    <div className="pk-feature-card">
-                      <div className="pk-feature-icon">◉</div>
-                      <h3>Comprende los resultados</h3>
-                      <p>
-                        Consulta las clasificaciones y aprende a
-                        interpretar los resultados del modelo.
-                      </p>
-                      <button onClick={() => navegar("/resultados")}>
-                        Ver resultados →
-                      </button>
-                    </div>
-
-                    <div className="pk-feature-card">
-                      <div className="pk-feature-icon">▤</div>
-                      <h3>Consulta tu actividad</h3>
-                      <p>
-                        Revisa tus análisis anteriores y sus
-                        resultados almacenados.
-                      </p>
-                      <button onClick={() => navegar("/historial")}>
-                        Abrir historial →
-                      </button>
-                    </div>
-                  </section>
-
-                  <section className="pk-dashboard">
-                    <div className="pk-dashboard-heading">
-                      <div>
-                        <span className="pk-eyebrow">
-                          RESUMEN DE ACTIVIDAD
-                        </span>
-                        <h2>Estado de tus análisis</h2>
-                        <p>
-                          Consulta la actividad individual registrada
-                          en ProtecKey.
-                        </p>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() => navegar("/historial")}
-                      >
-                        Ver historial →
-                      </button>
-                    </div>
-
-                    <div className="pk-dashboard-stats">
-                      <article className="pk-dashboard-stat">
-                        <span className="pk-dashboard-stat-icon">▤</span>
-                        <span>Análisis individuales</span>
-                        <strong>{totalIndividuales}</strong>
-                        <small>Registros almacenados</small>
-                      </article>
-
-                      <article className="pk-dashboard-stat">
-                        <span className="pk-dashboard-stat-icon normal">✓</span>
-                        <span>Tráfico normal</span>
-                        <strong>{totalNormales}</strong>
-                        <small>Clasificados como normales</small>
-                      </article>
-
-                      <article className="pk-dashboard-stat">
-                        <span className="pk-dashboard-stat-icon danger">!</span>
-                        <span>Posibles amenazas</span>
-                        <strong>{totalAmenazas}</strong>
-                        <small>Requieren interpretación</small>
-                      </article>
-
-                      <article className="pk-dashboard-stat">
-                        <span className="pk-dashboard-stat-icon evaluated">◎</span>
-                        <span>Análisis evaluados</span>
-                        <strong>{totalEvaluados}</strong>
-                        <small>Con etiqueta real conocida</small>
-                      </article>
-                    </div>
-
-                    <div className="pk-dashboard-distribution">
-                      <div className="pk-dashboard-distribution-heading">
-                        <div>
-                          <h3>Distribución del tráfico</h3>
-                          <p>
-                            Proporción de clasificaciones individuales.
-                          </p>
-                        </div>
-                        <span>{totalIndividuales} registros</span>
-                      </div>
-
-                      <div className="pk-dashboard-bar">
-                        <div
-                          className="pk-dashboard-bar-normal"
-                          style={{ width: `${porcentajeNormal}%` }}
-                        />
-                        <div
-                          className="pk-dashboard-bar-danger"
-                          style={{ width: `${porcentajeAmenazas}%` }}
-                        />
-                      </div>
-
-                      <div className="pk-dashboard-legend">
-                        <span>
-                          <i className="pk-dashboard-dot normal" />
-                          Normal: {porcentajeNormal.toFixed(1)}%
-                        </span>
-
-                        <span>
-                          <i className="pk-dashboard-dot danger" />
-                          Potencialmente malicioso: {porcentajeAmenazas.toFixed(1)}%
-                        </span>
-                      </div>
-                    </div>
-                  </section>
-
-
-                  <section className="pk-welcome-strip">
-                    <div>
-                      <span className="pk-eyebrow">TU ACTIVIDAD</span>
-                      <h2>{historial.length} análisis individuales</h2>
-                      <p>
-                        Registros individuales almacenados actualmente
-                        en PostgreSQL.
-                      </p>
-                    </div>
-
-                    <button onClick={() => navegar("/historial")}>
-                      Consultar actividad →
-                    </button>
-                  </section>
-                </div>
-              }
-            />
-
+            <Route path="/" element={<SOCDashboard />} />
 
             <Route
               path="/analizar"
               element={
                 <div className="pk-page">
                   <div className="pk-analysis-heading">
-                    <span className="pk-eyebrow">
-                      CENTRO DE ANÁLISIS
-                    </span>
+                    <span className="pk-eyebrow">CENTRO DE ANÁLISIS</span>
                     <h1>Nuevo análisis</h1>
                     <p>
                       Selecciona cómo deseas analizar el tráfico de red.
@@ -630,8 +481,8 @@ function ProtecKey() {
                       <span className="pk-analysis-option-icon">◎</span>
                       <strong>Análisis individual</strong>
                       <small>
-                        Analiza una conexión mediante un formulario
-                        guiado o un CSV de una sola fila.
+                        Analiza una conexión mediante un formulario guiado o un
+                        CSV de una sola fila.
                       </small>
                     </button>
 
@@ -647,8 +498,8 @@ function ProtecKey() {
                       <span className="pk-analysis-option-icon">▤</span>
                       <strong>Análisis por lotes</strong>
                       <small>
-                        Carga un archivo CSV para analizar
-                        múltiples conexiones de red.
+                        Carga un archivo CSV para analizar múltiples conexiones
+                        de red.
                       </small>
                     </button>
                   </div>
@@ -670,15 +521,12 @@ function ProtecKey() {
               }
             />
 
-
             <Route
               path="/resultados"
               element={
                 <div className="pk-section">
                   <div className="pk-section-heading">
-                    <span className="pk-eyebrow">
-                      REPORTE DEL ANÁLISIS
-                    </span>
+                    <span className="pk-eyebrow">REPORTE DEL ANÁLISIS</span>
                     <h1>Resultados</h1>
                     <p>
                       Consulta los resultados de tu análisis de tráfico de red.
@@ -718,16 +566,12 @@ function ProtecKey() {
                       <div className="pk-results-stats">
                         <div className="pk-stat-box">
                           <span>Registros analizados</span>
-                          <strong>
-                            {ultimoResultado.detection.total}
-                          </strong>
+                          <strong>{ultimoResultado.detection.total}</strong>
                         </div>
 
                         <div className="pk-stat-box pk-stat-normal">
                           <span>Tráfico normal</span>
-                          <strong>
-                            {ultimoResultado.detection.normal}
-                          </strong>
+                          <strong>{ultimoResultado.detection.normal}</strong>
                         </div>
 
                         <div className="pk-stat-box pk-stat-alert">
@@ -748,7 +592,8 @@ function ProtecKey() {
                               width: `${
                                 ultimoResultado.detection.total > 0
                                   ? (ultimoResultado.detection.normal /
-                                      ultimoResultado.detection.total) * 100
+                                      ultimoResultado.detection.total) *
+                                    100
                                   : 0
                               }%`,
                             }}
@@ -759,8 +604,10 @@ function ProtecKey() {
                             style={{
                               width: `${
                                 ultimoResultado.detection.total > 0
-                                  ? (ultimoResultado.detection.potentially_malicious /
-                                      ultimoResultado.detection.total) * 100
+                                  ? (ultimoResultado.detection
+                                      .potentially_malicious /
+                                      ultimoResultado.detection.total) *
+                                    100
                                   : 0
                               }%`,
                             }}
@@ -783,7 +630,7 @@ function ProtecKey() {
                           <span>
                             🔴 Potencialmente malicioso:{" "}
                             {Number(
-                              ultimoResultado.detection.malicious_percentage
+                              ultimoResultado.detection.malicious_percentage,
                             ).toFixed(1)}
                             %
                           </span>
@@ -800,19 +647,27 @@ function ProtecKey() {
                               malicioso para cada registro analizado.
                             </p>
 
-                            <div style={{ overflowX: "auto", marginTop: "16px" }}>
+                            <div
+                              style={{ overflowX: "auto", marginTop: "16px" }}
+                            >
                               <table
                                 style={{
                                   width: "100%",
                                   borderCollapse: "collapse",
-                                  textAlign: "left"
+                                  textAlign: "left",
                                 }}
                               >
                                 <thead>
                                   <tr>
-                                    <th style={{ padding: "12px" }}>Registro</th>
-                                    <th style={{ padding: "12px" }}>Clasificación</th>
-                                    <th style={{ padding: "12px" }}>Puntuación</th>
+                                    <th style={{ padding: "12px" }}>
+                                      Registro
+                                    </th>
+                                    <th style={{ padding: "12px" }}>
+                                      Clasificación
+                                    </th>
+                                    <th style={{ padding: "12px" }}>
+                                      Puntuación
+                                    </th>
                                   </tr>
                                 </thead>
 
@@ -820,19 +675,19 @@ function ProtecKey() {
                                   {ultimoResultado.detection.results
                                     .slice(0, 20)
                                     .map((registro, indice) => {
-                                      const puntuacion = registro.malicious_probability;
+                                      const puntuacion =
+                                        registro.malicious_probability;
 
                                       const porcentaje =
                                         puntuacion !== null &&
                                         puntuacion !== undefined &&
                                         Number.isFinite(Number(puntuacion))
-                                          ? `${(Number(puntuacion) * 100).toLocaleString(
-                                              "es-CO",
-                                              {
-                                                minimumFractionDigits: 2,
-                                                maximumFractionDigits: 2
-                                              }
-                                            )} %`
+                                          ? `${(
+                                              Number(puntuacion) * 100
+                                            ).toLocaleString("es-CO", {
+                                              minimumFractionDigits: 2,
+                                              maximumFractionDigits: 2,
+                                            })} %`
                                           : "No disponible";
 
                                       return (
@@ -862,17 +717,17 @@ function ProtecKey() {
                             {ultimoResultado.detection.results.length > 20 && (
                               <p style={{ marginTop: "12px" }}>
                                 Se muestran los primeros 20 registros de{" "}
-                                {ultimoResultado.detection.results.length} analizados.
+                                {ultimoResultado.detection.results.length}{" "}
+                                analizados.
                               </p>
                             )}
 
                             <small>
-                              Las puntuaciones son estimaciones del modelo,
-                              no confirmaciones de ataques.
+                              Las puntuaciones son estimaciones del modelo, no
+                              confirmaciones de ataques.
                             </small>
                           </section>
                         )}
-
 
                       <div className="pk-results-explanation">
                         <h3>¿Qué significa este resultado?</h3>
@@ -881,16 +736,14 @@ function ProtecKey() {
                           <strong>
                             {ultimoResultado.detection.potentially_malicious}
                           </strong>{" "}
-                          registros con patrones potencialmente maliciosos,
-                          de un total de{" "}
-                          <strong>
-                            {ultimoResultado.detection.total}
-                          </strong>.
+                          registros con patrones potencialmente maliciosos, de
+                          un total de{" "}
+                          <strong>{ultimoResultado.detection.total}</strong>.
                         </p>
                         <p>
-                          Estas clasificaciones no confirman ataques reales.
-                          Los registros señalados pueden requerir una
-                          revisión adicional.
+                          Estas clasificaciones no confirman ataques reales. Los
+                          registros señalados pueden requerir una revisión
+                          adicional.
                         </p>
                       </div>
 
@@ -898,13 +751,13 @@ function ProtecKey() {
                         <div className="pk-results-evaluation">
                           <h3>Evaluación del modelo</h3>
                           <p>
-                            El archivo contiene etiquetas reales, por lo
-                            que fue posible calcular métricas de evaluación.
+                            El archivo contiene etiquetas reales, por lo que fue
+                            posible calcular métricas de evaluación.
                           </p>
 
                           <div className="pk-results-stats">
                             {Object.entries(
-                              ultimoResultado.evaluation.metrics
+                              ultimoResultado.evaluation.metrics,
                             ).map(([nombre, valor]) => (
                               <div className="pk-stat-box" key={nombre}>
                                 <span>{nombre.toUpperCase()}</span>
@@ -921,9 +774,7 @@ function ProtecKey() {
                     <div className="pk-empty-state">
                       <div className="pk-empty-icon">◎</div>
                       <h2>Todavía no hay resultados en esta sesión</h2>
-                      <p>
-                        Realiza un análisis para visualizar sus resultados.
-                      </p>
+                      <p>Realiza un análisis para visualizar sus resultados.</p>
 
                       <button
                         className="pk-primary-button"
@@ -944,67 +795,20 @@ function ProtecKey() {
                   <div className="pk-section-heading">
                     <span className="pk-eyebrow">ACTIVIDAD GUARDADA</span>
                     <h1>Historial de análisis</h1>
-                    <p>
-                      Consulta tus análisis por lotes e individuales.
-                    </p>
+                    <p>Consulta tus análisis por lotes e individuales.</p>
                   </div>
 
-                  <NetworkHistory />
-
-                  <MLHistory />
-
-                  <BatchHistory actualizar={actualizarLotes} />
-
-                  {historialIndividual}
+                  <HistoryWorkspace
+                    individual={historialIndividual}
+                    network={<NetworkHistory />}
+                    ml={<MLHistory />}
+                    batch={<BatchHistory key={actualizarLotes} />}
+                  />
                 </div>
               }
             />
 
-            <Route
-              path="/aprende"
-              element={
-                <div className="pk-section">
-                  <div className="pk-section-heading">
-                    <span className="pk-eyebrow">CONOCE PROTECKEY</span>
-                    <h1>Aprende</h1>
-                    <p>
-                      Descubre cómo funciona el sistema y qué significan
-                      sus resultados.
-                    </p>
-                  </div>
-
-                  <div className="pk-learning-grid">
-                    <article className="pk-feature-card">
-                      <div className="pk-feature-icon">⌁</div>
-                      <h3>¿Qué analiza ProtecKey?</h3>
-                      <p>
-                        Registros de tráfico de red para identificar
-                        patrones potencialmente maliciosos.
-                      </p>
-                    </article>
-
-                    <article className="pk-feature-card">
-                      <div className="pk-feature-icon">◎</div>
-                      <h3>¿Qué es LightGBM?</h3>
-                      <p>
-                        Es el modelo de aprendizaje automático que
-                        utilizamos para clasificar los registros.
-                      </p>
-                    </article>
-
-                    <article className="pk-feature-card">
-                      <div className="pk-feature-icon">!</div>
-                      <h3>¿Una alerta confirma un ataque?</h3>
-                      <p>
-                        No. Una alerta indica una clasificación
-                        potencialmente maliciosa que debe interpretarse
-                        con precaución.
-                      </p>
-                    </article>
-                  </div>
-                </div>
-              }
-            />
+            <Route path="/aprende" element={<LearningLab />} />
 
             <Route
               path="*"

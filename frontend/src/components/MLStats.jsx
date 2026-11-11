@@ -8,7 +8,7 @@ const TARJETAS = [
     clave: "total",
     titulo: "Evaluaciones ML",
     descripcion: "Predicciones registradas",
-    icono: "?",
+    icono: "◎",
     estilo: "total",
   },
   {
@@ -20,16 +20,16 @@ const TARJETAS = [
   },
   {
     clave: "normales",
-    titulo: "Tr?fico normal",
+    titulo: "Tráfico normal",
     descripcion: "Clasificaciones normales",
-    icono: "?",
+    icono: "◎",
     estilo: "normal",
   },
   {
     clave: "gravedad_alta",
-    titulo: "Gravedad alta / cr?tica",
-    descripcion: "Seg?n el an?lisis de amenaza",
-    icono: "?",
+    titulo: "Gravedad alta / crítica",
+    descripcion: "Según el análisis de amenaza",
+    icono: "◎",
     estilo: "gravedad",
   },
 ];
@@ -62,21 +62,14 @@ export default function MLStats() {
 
         const datos = await respuesta.json();
 
-        const claves = [
-          "total",
-          "normales",
-          "sospechosas",
-          "gravedad_alta",
-        ];
+        const claves = ["total", "normales", "sospechosas", "gravedad_alta"];
 
         if (
           !claves.every(
-            (clave) =>
-              Number.isInteger(datos[clave]) &&
-              datos[clave] >= 0
+            (clave) => Number.isInteger(datos[clave]) && datos[clave] >= 0,
           )
         ) {
-          throw new Error("Respuesta de estad?sticas no v?lida");
+          throw new Error("Respuesta de estadísticas no válida");
         }
 
         if (activo) {
@@ -85,7 +78,7 @@ export default function MLStats() {
         }
       } catch (err) {
         if (activo && err.name !== "AbortError") {
-          setError("No fue posible actualizar las estad?sticas ML.");
+          setError("No fue posible actualizar las estadísticas ML.");
         }
       } finally {
         if (activo) setActualizando(false);
@@ -103,33 +96,25 @@ export default function MLStats() {
     };
   }, []);
 
-  const formato = (numero) =>
-    Number(numero).toLocaleString("es-CO");
+  const formato = (numero) => Number(numero).toLocaleString("es-CO");
 
   return (
     <section className="pk-mlstats">
       <div className="pk-mlstats-header">
         <div>
           <span className="pk-mlstats-eyebrow">
-            PROTECKEY ? SECURITY OVERVIEW
+            PROTECKEY · SECURITY OVERVIEW
           </span>
           <h2>Resumen de seguridad ML</h2>
           <p>
-            Resultados acumulados de las evaluaciones
-            registradas en PostgreSQL.
+            Resultados acumulados de las evaluaciones registradas en PostgreSQL.
           </p>
         </div>
 
         <div className="pk-mlstats-status">
-          <span
-            className={
-              error
-                ? "pk-mlstats-dot error"
-                : "pk-mlstats-dot"
-            }
-          />
+          <span className={error ? "pk-mlstats-dot error" : "pk-mlstats-dot"} />
           {error
-            ? "Sin actualizaci?n"
+            ? "Sin actualización"
             : actualizando
               ? "Actualizando"
               : "Datos sincronizados"}
@@ -144,15 +129,11 @@ export default function MLStats() {
           >
             <div className="pk-mlstats-card-top">
               <span>{tarjeta.titulo}</span>
-              <span className="pk-mlstats-icon">
-                {tarjeta.icono}
-              </span>
+              <span className="pk-mlstats-icon">{tarjeta.icono}</span>
             </div>
 
             <strong className="pk-mlstats-value">
-              {estadisticas
-                ? formato(estadisticas[tarjeta.clave])
-                : "?"}
+              {estadisticas ? formato(estadisticas[tarjeta.clave]) : "—"}
             </strong>
 
             <span className="pk-mlstats-description">
@@ -164,15 +145,18 @@ export default function MLStats() {
 
       {error && (
         <p className="pk-mlstats-error" role="alert">
-          {error} Se conservan los ?ltimos valores disponibles.
+          {error}{" "}
+          {estadisticas
+            ? "Se conservan los últimos valores disponibles."
+            : "No hay valores disponibles."}
         </p>
       )}
 
       <div className="pk-mlstats-footer">
-        <span>Actualizaci?n autom?tica cada 10 segundos</span>
+        <span>Actualización automática cada 10 segundos</span>
         <span>
-          Las predicciones ML son experimentales y no
-          constituyen ataques confirmados.
+          Las predicciones ML son experimentales y no constituyen ataques
+          confirmados.
         </span>
       </div>
     </section>

@@ -1,3 +1,5 @@
+import { EventFilters, EventTimeline } from "./EventExplorer";
+import { filterEvents, newestFirst } from "./history-utils";
 
 import { useEffect, useState } from "react";
 import "./NetworkHistory.css";
@@ -5,6 +7,12 @@ import "./NetworkHistory.css";
 const LIMITE = 20;
 
 function NetworkHistory() {
+  const [filters, setFilters] = useState({
+    search: "",
+    date: "",
+    result: "all",
+  });
+  const [view, setView] = useState("table");
   const [registros, setRegistros] = useState([]);
   const [total, setTotal] = useState(0);
   const [pagina, setPagina] = useState(1);
@@ -22,7 +30,7 @@ function NetworkHistory() {
       try {
         const respuesta = await fetch(
           `/api/live/history?limite=${LIMITE}&pagina=${pagina}`,
-          { signal: controlador.signal }
+          { signal: controlador.signal },
         );
 
         if (!respuesta.ok) {
@@ -48,6 +56,8 @@ function NetworkHistory() {
     return () => controlador.abort();
   }, [pagina, actualizacion]);
 
+  const filtered = newestFirst(filterEvents(registros, filters));
+
   const totalPaginas = Math.max(1, Math.ceil(total / LIMITE));
 
   function fecha(valor) {
@@ -62,13 +72,13 @@ function NetworkHistory() {
     return `${Number(valor || 0).toFixed(2)} s`;
   }
 
-    function actualizar() {
-        if (pagina !== 1) {
-            setPagina(1);
-        } else {
-            setActualizacion((valor) => valor + 1);
-        }
+  function actualizar() {
+    if (pagina !== 1) {
+      setPagina(1);
+    } else {
+      setActualizacion((valor) => valor + 1);
     }
+  }
 
   return (
     <section className="pk-network-history">
@@ -77,8 +87,8 @@ function NetworkHistory() {
           <span className="pk-eyebrow">TRÁFICO ALMACENADO</span>
           <h2>Historial de conexiones</h2>
           <p>
-            Consulta las conexiones capturadas automáticamente
-            por el monitor de ProtecKey.
+            Consulta las conexiones capturadas automáticamente por el monitor de
+            ProtecKey.
           </p>
         </div>
 
@@ -90,7 +100,7 @@ function NetworkHistory() {
       <div className="pk-network-stats">
         <div>
           <span>Conexiones registradas</span>
-          <strong>{numero(total)}</strong>
+          <strong>{error || cargando ? "—" : numero(total)}</strong>
         </div>
         <div>
           <span>Registros por página</span>
@@ -102,9 +112,25 @@ function NetworkHistory() {
         </div>
       </div>
 
+      <EventFilters
+        filters={filters}
+        onChange={setFilters}
+        view={view}
+        onView={setView}
+        detection={false}
+        count={filtered.length}
+        total={registros.length}
+      />
+      {!cargando && !error && view === "timeline" && (
+        <EventTimeline records={filtered} detection={false} />
+      )}
       {cargando && <p className="pk-network-message">Cargando conexiones...</p>}
 
-      {error && <p className="pk-network-error" role="alert">{error}</p>}
+      {error && (
+        <p className="pk-network-error" role="alert">
+          {error}
+        </p>
+      )}
 
       {!cargando && !error && registros.length === 0 && (
         <p className="pk-network-message">
@@ -114,7 +140,7 @@ function NetworkHistory() {
 
       {!cargando && !error && registros.length > 0 && (
         <>
-          <div className="pk-network-table-wrapper">
+          <div className="pk-network-table-wrapper" hidden={view !== "table"}>
             <table>
               <thead>
                 <tr>
@@ -128,7 +154,12 @@ function NetworkHistory() {
                 </tr>
               </thead>
               <tbody>
-                {registros.map((registro) => (
+                {filtered.length === 0 && (
+                  <tr>
+                    <td colSpan={7}>No hay coincidencias en esta página.</td>
+                  </tr>
+                )}
+                {filtered.map((registro) => (
                   <tr key={registro.id}>
                     <td>{fecha(registro.fecha_hora)}</td>
                     <td>
