@@ -35,6 +35,27 @@ const evaluacionCorrecta =
   const esNormal = prediccion === 0;
   const esValido = esMalicioso || esNormal;
 
+  
+  const probabilidadCruda = deteccion?.malicious_probability;
+
+  const probabilidadMaliciosa =
+    probabilidadCruda !== null &&
+    probabilidadCruda !== undefined &&
+    Number.isFinite(Number(probabilidadCruda))
+      ? Number(probabilidadCruda)
+      : null;
+
+  const porcentajeMalicioso =
+    probabilidadMaliciosa !== null &&
+    probabilidadMaliciosa >= 0 &&
+    probabilidadMaliciosa <= 1
+      ? `${(probabilidadMaliciosa * 100).toLocaleString("es-CO", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        })} %`
+      : "No disponible";
+
+
   const fecha = guardado?.fecha_hora
     ? new Date(guardado.fecha_hora)
     : null;
@@ -114,6 +135,18 @@ const evaluacionCorrecta =
             {fecha && !Number.isNaN(fecha.getTime())
               ? fecha.toLocaleTimeString("es-CO")
               : "Sin hora registrada"}
+          </small>
+        </article>
+
+        
+        <article className="pk-ind-result-card">
+          <span className="pk-ind-result-card-icon">%</span>
+          <span>Puntuación de tráfico malicioso</span>
+
+          <strong>{porcentajeMalicioso}</strong>
+
+          <small>
+            Estimación del modelo LightGBM
           </small>
         </article>
       </div>

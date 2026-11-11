@@ -1,0 +1,143 @@
+.pk-monitor-control {
+  margin: 22px 0;
+  padding: 24px;
+  background: #141d30;
+  border: 1px solid #26334a;
+  border-radius: 16px;
+  color: #f8fafc;
+}
+
+.pk-monitor-control-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.pk-monitor-control-eyebrow {
+  color: #60a5fa;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+}
+
+.pk-monitor-control-heading h2 {
+  margin: 8px 0;
+  font-size: 21px;
+}
+
+.pk-monitor-control-heading p,
+.pk-monitor-help {
+  color: #8996ac;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.pk-monitor-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 15px;
+  border: 1px solid #33435d;
+  border-radius: 30px;
+  background: #1c2940;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.pk-monitor-indicator-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #94a3b8;
+}
+
+.pk-monitor-indicator.activo .pk-monitor-indicator-dot {
+  background: #22c55e;
+  box-shadow: 0 0 12px #22c55e66;
+}
+
+.pk-monitor-indicator.inactivo .pk-monitor-indicator-dot {
+  background: #f59e0b;
+}
+
+.pk-monitor-login label {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.pk-monitor-login-row,
+.pk-monitor-buttons {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.pk-monitor-login-row input {
+  flex: 1;
+  min-width: 220px;
+  padding: 12px 14px;
+  border: 1px solid #33435d;
+  border-radius: 9px;
+  background: #0f172a;
+  color: #f8fafc;
+}
+
+.pk-monitor-control button {
+  padding: 12px 18px;
+  border: 1px solid #33435d;
+  border-radius: 9px;
+  color: white;
+  background: #2563eb;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.pk-monitor-control button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.pk-monitor-control .pk-monitor-start {
+  background: #15803d;
+}
+
+.pk-monitor-control .pk-monitor-stop {
+  background: #b91c1c;
+}
+
+.pk-monitor-control .pk-monitor-logout {
+  background: #1c2940;
+}
+
+.pk-monitor-message {
+  color: #86efac;
+  margin: 16px 0 0;
+}
+
+.pk-monitor-error {
+  color: #fca5a5;
+  margin: 16px 0 0;
+}
+
+.pk-monitor-help {
+  margin-top: 18px;
+  font-size: 12px;
+}
+
+@media (max-width: 600px) {
+  .pk-monitor-control {
+    padding: 16px;
+  }
+
+  .pk-monitor-login-row input,
+  .pk-monitor-login-row button,
+  .pk-monitor-buttons button {
+    width: 100%;
+  }
+}

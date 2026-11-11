@@ -1,7 +1,7 @@
 import { useState } from "react";
 import Papa from "papaparse";
 
-const API_URL = "http://127.0.0.1:8000";
+const API_URL = "";
 
 // Características que necesita el modelo LightGBM.
 // No incluyen id, attack_cat ni label.

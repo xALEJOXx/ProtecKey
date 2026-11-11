@@ -2,7 +2,7 @@
 import { useRef, useState } from "react";
 import Papa from "papaparse";
 
-const API_URL = "http://127.0.0.1:8000";
+const API_URL = "";
 
 const GRUPOS = [
   {

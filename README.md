@@ -1,14 +1,16 @@
 # ProtecKey
 
-### Sistema inteligente de detección de amenazas y comportamientos maliciosos
+### Prototipo experimental de monitoreo y análisis de tráfico de red
 
-**ProtecKey** es un prototipo académico de ciberseguridad orientado al análisis de posibles amenazas que pueden comprometer la seguridad de entornos donde operan sistemas de inteligencia artificial.
+**Proyecto de investigación:** Modelos de aprendizaje por refuerzo para comprender la evasión de sistemas de detección de intrusos.
 
-El proyecto integra técnicas de **Machine Learning**, una arquitectura de microservicios y una aplicación web para identificar patrones sospechosos en registros de tráfico de red.
+**ProtecKey** es un prototipo académico de ciberseguridad desarrollado para capturar, analizar y clasificar tráfico de red mediante técnicas de aprendizaje automático.
 
-Su implementación actual utiliza un modelo de clasificación entrenado con datos de tráfico normal y malicioso, permitiendo realizar análisis individuales y por lotes, consultar resultados, evaluar predicciones y almacenar un historial de los análisis realizados.
+Integra monitoreo de red en tiempo real, clasificación de tráfico potencialmente malicioso, visualización de alertas, consulta de historiales y controles de acceso.
 
-El sistema busca facilitar la comprensión de posibles amenazas mediante una interfaz clara, accesible y sencilla de utilizar.
+Su propósito es proporcionar una base experimental para estudiar el comportamiento de los sistemas de detección de intrusos (IDS) y apoyar futuras investigaciones sobre estrategias de evasión mediante aprendizaje por refuerzo.
+
+**Alcance actual:** el prototipo implementa detección mediante aprendizaje supervisado. La integración de agentes de aprendizaje por refuerzo constituye una etapa posterior de investigación.
 
 ---
 
@@ -24,7 +26,7 @@ El proyecto no pretende sustituir soluciones profesionales de seguridad, sino de
 
 ## 2. Objetivo
 
-Desarrollar un prototipo de apoyo a la detección de posibles amenazas en entornos tecnológicos asociados con sistemas de inteligencia artificial, mediante un modelo de Machine Learning capaz de clasificar patrones de tráfico de red y facilitar la visualización, evaluación y almacenamiento de resultados.
+Desarrollar un prototipo experimental de monitoreo y análisis de tráfico de red que permita identificar comportamientos potencialmente maliciosos mediante modelos de aprendizaje automático, visualizar resultados y generar información útil para el estudio de sistemas de detección de intrusos y su posible evasión mediante aprendizaje por refuerzo.
 
 ## 3. Funcionalidades implementadas
 
@@ -206,6 +208,32 @@ Por tanto, el prototipo **no detecta directamente ataques específicos contra mo
 Su contribución actual consiste en demostrar cómo el aprendizaje automático puede apoyar la identificación de posibles amenazas de red en infraestructuras tecnológicas, incluidas aquellas donde operan sistemas de IA.
 
 ---
+
+### Resultados de evaluación del modelo
+
+Durante el desarrollo se evaluó el modelo LightGBM con el conjunto de prueba UNSW-NB15, utilizando un umbral de clasificación de 0.5.
+
+En una evaluación experimental del modelo entrenado se obtuvieron los siguientes resultados:
+
+| Métrica | Resultado |
+|---|---|
+| Accuracy | 90.50 % |
+| Precision | 87.19 % |
+| Recall | 97.01 % |
+| F1-score | 91.84 % |
+
+Estos resultados corresponden a la evaluación experimental del modelo entrenado durante el proyecto y no deben interpretarse automáticamente como métricas del archivo de modelo actualmente cargado en producción.
+
+El desempeño puede variar con otros conjuntos de datos y condiciones reales de tráfico.
+
+### Puntuación de tráfico malicioso
+
+Además de la clasificación binaria, ProtecKey muestra una puntuación calculada mediante la salida `predict_proba` del modelo.
+
+Esta puntuación permite observar qué tan fuertemente el modelo favorece la clase de tráfico potencialmente malicioso.
+
+No constituye una probabilidad calibrada de que exista un ataque ni reemplaza la evaluación de un especialista.
+
 
 ## 7. Instalación y ejecución
 
@@ -478,48 +506,71 @@ Estas verificaciones demuestran el funcionamiento del prototipo en el entorno lo
 
 ---
 
+### Pruebas finales de integración
+
+Se implementó el archivo `tests/test_final_proteckey.py`
+para verificar el funcionamiento de los principales componentes
+de la aplicación.
+
+Las pruebas realizadas fueron:
+
+| Prueba | Resultado |
+|---|---|
+| Disponibilidad del API Gateway | Aprobada |
+| Consulta del historial individual | Aprobada |
+| Consulta del historial por lotes | Aprobada |
+| Disponibilidad del frontend | Aprobada |
+| Validación de registros incompletos | Aprobada |
+
+**Resultado final: 5 de 5 pruebas superadas.**
+
+Para ejecutar estas verificaciones desde la raíz del proyecto
+en Windows, con el entorno virtual configurado:
+
+```powershell
+.\.venv\Scripts\python.exe .\tests\test_final_proteckey.py
+```
+
+Estas pruebas verifican la disponibilidad de los componentes
+principales y el rechazo de una entrada inválida.
+
+No constituyen una prueba exhaustiva de seguridad, rendimiento
+o precisión del modelo.
+
+
 ## 12. Limitaciones del proyecto
 
-ProtecKey es un **prototipo académico**, por lo que presenta algunas limitaciones importantes:
+ProtecKey es un prototipo académico experimental y no reemplaza un IDS profesional.
 
-- El modelo fue entrenado con datos de UNSW-NB15 y su desempeño depende de la similitud entre esos datos y los registros analizados.
-- Las predicciones pueden presentar falsos positivos y falsos negativos.
-- No realiza monitoreo continuo de tráfico de red en tiempo real.
-- No ejecuta acciones automáticas de bloqueo o mitigación de ataques.
-- No detecta directamente vulnerabilidades internas de modelos de inteligencia artificial.
-- No reemplaza herramientas profesionales de monitoreo, detección de intrusiones o respuesta ante incidentes.
-- La configuración actual está orientada al desarrollo y ejecución local mediante Docker.
-
-Los resultados deben interpretarse como información de apoyo para el análisis de posibles amenazas.
+- El modelo LightGBM fue evaluado utilizando UNSW-NB15. Su rendimiento puede variar con tráfico real.
+- La clasificación puede generar falsos positivos y falsos negativos.
+- El monitoreo en tiempo real depende de la configuración y los permisos del equipo anfitrión.
+- Las alertas representan predicciones del modelo y no una confirmación definitiva de un ataque.
+- Los controles de acceso implementados no equivalen a una auditoría de seguridad exhaustiva.
+- La instalación actual está orientada a un entorno local de desarrollo y experimentación.
+- Todavía no se ha integrado ni evaluado un agente de aprendizaje por refuerzo para estudiar evasión de IDS.
 
 ## 13. Posibles mejoras futuras
 
-Como continuación del proyecto, podrían implementarse las siguientes funcionalidades:
-
-- Integración con fuentes de tráfico de red en tiempo real.
-- Detección de nuevas categorías de ataques.
-- Incorporación de conjuntos de datos especializados en ataques contra sistemas de IA.
-- Visualización avanzada de estadísticas y tendencias.
-- Generación de alertas automáticas.
-- Incorporación de mecanismos de explicación de predicciones.
-- Autenticación y control de acceso.
-- Despliegue en infraestructura de producción.
-
-Estas funcionalidades representan posibles líneas de desarrollo y **no forman parte de las capacidades implementadas actualmente**.
-
----
+- Integrar un agente de aprendizaje por refuerzo en un entorno de experimentación controlado.
+- Estudiar la respuesta del detector frente a modificaciones del tráfico de prueba.
+- Comparar modelos supervisados y estrategias de detección adaptativa.
+- Evaluar el rendimiento con conjuntos de datos adicionales.
+- Reducir la tasa de falsos positivos.
+- Incorporar explicaciones de las predicciones y nuevas métricas de evaluación.
+- Fortalecer las pruebas de seguridad, rendimiento y reproducibilidad.
 
 ## 14. Estado actual
 
 **Prototipo funcional en entorno local.**
 
-ProtecKey cuenta con una interfaz web, microservicios backend, un modelo de clasificación LightGBM y una base de datos PostgreSQL integrados mediante Docker Compose.
+ProtecKey integra una interfaz web, servicios backend, PostgreSQL, modelos de Machine Learning y un monitor local de tráfico de red.
 
-Se ha comprobado el funcionamiento de los análisis individuales y por lotes, la consulta de historiales y la persistencia de resultados.
+Se han implementado análisis individuales y por lotes, monitoreo de red, alertas, estadísticas, historial de predicciones y mecanismos de autenticación para operadores y evaluadores.
 
-El código fuente y los archivos necesarios para su ejecución local se encuentran organizados en este repositorio.
+En las pruebas finales de integración se aprobaron **5 de 5 verificaciones**.
 
----
+El modelo `modelo_proteckey_lightgbm_nuevo.joblib` obtuvo un F1-score de **91,84 %** sobre 82.332 registros de prueba de UNSW-NB15. Estos resultados corresponden a una evaluación experimental y no garantizan el mismo rendimiento en redes reales.
 
 ## 15. Contexto académico
 

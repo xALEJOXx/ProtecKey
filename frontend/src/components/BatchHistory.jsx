@@ -12,7 +12,7 @@ function BatchHistory() {
 
     try {
       const respuesta = await fetch(
-        "http://127.0.0.1:8000/api/batch-history"
+        "/api/batch-history"
       );
 
       if (!respuesta.ok) {

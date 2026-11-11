@@ -44,3 +44,48 @@ frontend/dist/
 
 # Archivos locales de Docker
 *.log
+# ==========================================
+# ProtecKey - Exclusiones adicionales
+# ==========================================
+
+# Respaldos
+backups/
+respaldo_*/
+*_backup.py
+*.bak
+*.bak*
+*.bak394
+*respaldo*
+
+# Registros y datos generados
+logs/
+data/ml/
+prueba_1000_proteckey.csv
+
+# Configuraciones privadas
+protection_config.json
+.env.monitor-control
+.env.monitor-operator
+secure-access/.env
+
+# Archivos de empaquetado local
+crear_entrega.py
+ProtecKey_Entrega_Final.zip
+
+# Datos derivados del entrenamiento
+data/UNSW_NB15_ml_limpio.csv
+
+# Respaldos de documentacion
+docs/*antes*
+docs/*backup*
+docs/*respaldo*
+docs/*_20261110_*
+
+# Herramientas temporales de documentacion
+actualizar_readme.py
+README.md.bak_actualizacion
+
+# Dataset de entrenamiento (no necesario para ejecutar el prototipo)
+data/UNSW_NB15_training-set.csv
+
+completar_readme.py

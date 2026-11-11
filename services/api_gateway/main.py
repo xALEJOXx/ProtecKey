@@ -11,6 +11,7 @@ from services.database.batch_repository import (
     guardar_analisis_lote,
     obtener_analisis_lotes
 )
+from services.api_gateway.live_monitor import router as live_router
 
 app = FastAPI(
     title="ProtecKey API",
@@ -21,7 +22,8 @@ app = FastAPI(
 )
 
 
-# Permitirá posteriormente la comunicación
+
+# PermitirÃ¡ posteriormente la comunicaciÃ³n
 # con el frontend React.
 app.add_middleware(
     CORSMiddleware,
@@ -141,7 +143,7 @@ def historial_por_id(analysis_id: int):
             status_code=503,
             detail=(
                 "No fue posible consultar "
-                f"el análisis: {error}"
+                f"el anÃ¡lisis: {error}"
             )
         )
 
@@ -190,8 +192,8 @@ def analizar_lote(request: BatchAnalysisRequest):
         raise HTTPException(
             status_code=502,
             detail=(
-                "Data Service devolvió una respuesta "
-                "que no es JSON válido."
+                "Data Service devolviÃ³ una respuesta "
+                "que no es JSON vÃ¡lido."
             )
         )
 
@@ -205,13 +207,13 @@ def analizar_lote(request: BatchAnalysisRequest):
             )
         )
 
-    # Comprobar que el análisis terminó correctamente.
+    # Comprobar que el anÃ¡lisis terminÃ³ correctamente.
     if resultado_deteccion.get("status") != "success":
         raise HTTPException(
             status_code=502,
             detail=resultado_deteccion.get(
                 "mensaje",
-                "Data Service no pudo completar el análisis."
+                "Data Service no pudo completar el anÃ¡lisis."
             )
         )
 
@@ -246,7 +248,7 @@ def analizar_lote(request: BatchAnalysisRequest):
                 )
             )
 
-        # ProtecKey utiliza clasificación binaria.
+        # ProtecKey utiliza clasificaciÃ³n binaria.
         # Solo se permiten etiquetas 0 y 1.
         if any(
             type(label) is not int or label not in (0, 1)
@@ -256,7 +258,7 @@ def analizar_lote(request: BatchAnalysisRequest):
                 status_code=422,
                 detail=(
                     "Las etiquetas reales deben contener "
-                    "únicamente los valores 0 y 1."
+                    "Ãºnicamente los valores 0 y 1."
                 )
             )
 
@@ -272,7 +274,7 @@ def analizar_lote(request: BatchAnalysisRequest):
         ]
 
         # ==========================================
-        # 5. SOLICITAR MÉTRICAS DE EVALUACIÓN
+        # 5. SOLICITAR MÃ‰TRICAS DE EVALUACIÃ“N
         # ==========================================
 
         try:
@@ -292,7 +294,7 @@ def analizar_lote(request: BatchAnalysisRequest):
             raise HTTPException(
                 status_code=503,
                 detail=(
-                    "La detección se realizó, pero "
+                    "La detecciÃ³n se realizÃ³, pero "
                     "Evaluation Service no pudo responder: "
                     f"{error}"
                 )
@@ -326,7 +328,7 @@ def analizar_lote(request: BatchAnalysisRequest):
     }
 
     # ==========================================
-    # 7. AGREGAR MÉTRICAS SI EXISTEN
+    # 7. AGREGAR MÃ‰TRICAS SI EXISTEN
     # ==========================================
 
     if evaluacion:
@@ -369,7 +371,7 @@ def analizar_lote(request: BatchAnalysisRequest):
         raise HTTPException(
             status_code=500,
             detail=(
-                "El análisis se realizó correctamente, "
+                "El anÃ¡lisis se realizÃ³ correctamente, "
                 "pero no pudo guardarse en PostgreSQL: "
                 f"{error}"
             )
@@ -383,7 +385,7 @@ def analizar_lote(request: BatchAnalysisRequest):
 
 
 # ==========================================
-# HISTORIAL DE ANÁLISIS POR LOTES
+# HISTORIAL DE ANÃLISIS POR LOTES
 # ==========================================
 
 @app.get("/api/batch-history")
@@ -422,8 +424,184 @@ def historial_lotes():
             status_code=500,
             detail=(
                 "No fue posible consultar el historial "
-                f"de análisis por lotes: {error}"
+                f"de anÃ¡lisis por lotes: {error}"
             )
         )
 
 
+# Registrar directamente las rutas HTTP y WebSocket
+for ruta in live_router.routes:
+    app.router.routes.append(ruta)
+
+
+# ==========================================================
+# PROTECKEY - HISTORIAL DE DETECCIONES AUTOMATICAS LIGHTGBM
+# ==========================================================
+
+import os as _ml_os
+import secrets as _ml_secrets
+
+from fastapi import Header as _MLHeader
+from fastapi import HTTPException as _MLHTTPException
+from fastapi import Query as _MLQuery
+from pydantic import BaseModel as _MLBaseModel
+from pydantic import Field as _MLField
+
+from services.database.ml_repository import (
+    guardar_prediccion_ml_db,
+    obtener_historial_ml
+)
+
+
+class PrediccionMLRecibida(_MLBaseModel):
+    protocolo: str
+    origen: tuple[str, int]
+    destino: tuple[str, int]
+    prediccion: int = _MLField(ge=0, le=1)
+    probabilidad_ataque: float = _MLField(ge=0, le=1)
+    caracteristicas: dict = _MLField(default_factory=dict)
+    estado_tcp_info: dict = _MLField(default_factory=dict)
+    analisis_amenaza: dict = _MLField(default_factory=dict)
+    experimental: bool = True
+
+
+@app.post("/api/ml/predictions")
+def registrar_prediccion_ml(
+    resultado: PrediccionMLRecibida,
+    x_monitor_token: str | None = _MLHeader(default=None)
+):
+    token_esperado = _ml_os.getenv("LIVE_MONITOR_TOKEN")
+
+    if (
+        not token_esperado
+        or not x_monitor_token
+        or not _ml_secrets.compare_digest(
+            x_monitor_token,
+            token_esperado
+        )
+    ):
+        raise _MLHTTPException(
+            status_code=401,
+            detail="Acceso no autorizado."
+        )
+
+    try:
+        registro = guardar_prediccion_ml_db(
+            resultado.model_dump()
+        )
+
+        return {
+            "status": "success",
+            "registro": registro
+        }
+
+    except Exception:
+        raise _MLHTTPException(
+            status_code=503,
+            detail="No fue posible guardar la prediccion."
+        )
+
+
+@app.get("/api/ml/history")
+def consultar_historial_ml(
+    limite: int = _MLQuery(default=20, ge=1, le=100),
+    pagina: int = _MLQuery(default=1, ge=1),
+    x_history_token: str | None = _MLHeader(default=None)
+):
+    token_esperado = _ml_os.getenv("LIVE_HISTORY_TOKEN")
+
+    if (
+        not token_esperado
+        or not x_history_token
+        or not _ml_secrets.compare_digest(
+            x_history_token,
+            token_esperado
+        )
+    ):
+        raise _MLHTTPException(
+            status_code=401,
+            detail="Acceso no autorizado."
+        )
+
+    try:
+        return obtener_historial_ml(
+            limite=limite,
+            pagina=pagina
+        )
+
+    except Exception:
+        raise _MLHTTPException(
+            status_code=503,
+            detail="No fue posible consultar el historial ML."
+        )
+
+
+@app.get("/api/ml/predictions/{prediccion_id}")
+def consultar_detalle_prediccion_ml(
+    prediccion_id: int,
+    x_history_token: str | None = _MLHeader(default=None)
+):
+    import os
+    import secrets
+    from fastapi import HTTPException
+    from services.database.ml_repository import obtener_detalle_ml
+
+    token_esperado = os.getenv("LIVE_HISTORY_TOKEN", "")
+
+    if (
+        not token_esperado
+        or not x_history_token
+        or not secrets.compare_digest(
+            x_history_token,
+            token_esperado
+        )
+    ):
+        raise HTTPException(
+            status_code=401,
+            detail="No autorizado"
+        )
+
+    if prediccion_id < 1:
+        raise HTTPException(
+            status_code=400,
+            detail="ID invalido"
+        )
+
+    detalle = obtener_detalle_ml(prediccion_id)
+
+    if detalle is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Prediccion no encontrada"
+        )
+
+    return detalle
+
+@app.get("/api/ml/stats")
+def consultar_estadisticas_ml(
+    x_history_token: str | None = _MLHeader(default=None)
+):
+    from services.database.ml_repository import obtener_estadisticas_ml
+
+    token_esperado = _ml_os.getenv("LIVE_HISTORY_TOKEN")
+
+    if (
+        not token_esperado
+        or not x_history_token
+        or not _ml_secrets.compare_digest(
+            x_history_token,
+            token_esperado
+        )
+    ):
+        raise _MLHTTPException(
+            status_code=401,
+            detail="Acceso no autorizado."
+        )
+
+    try:
+        return obtener_estadisticas_ml()
+    except Exception:
+        raise _MLHTTPException(
+            status_code=503,
+            detail="No fue posible consultar las estadisticas ML."
+        )

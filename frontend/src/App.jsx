@@ -13,12 +13,18 @@ import "./App.css";
 import AnalysisForm from "./components/AnalysisForm";
 import BatchHistory from "./components/BatchHistory";
 import IndividualResult from "./components/IndividualResult";
+import LiveMonitor from "./components/LiveMonitor";
+import { LiveMonitorProvider } from "./components/LiveMonitorContext";
+import NetworkHistory from "./components/NetworkHistory";
+import MLHistory from "./components/MLHistory";
+import MLAlerts from "./components/MLAlerts";
 
-const API_URL = "http://127.0.0.1:8000";
+const API_URL = "";
 
 const opciones = [
   { ruta: "/", icono: "⌂", nombre: "Inicio" },
   { ruta: "/analizar", icono: "◎", nombre: "Nuevo análisis" },
+  { ruta: "/monitoreo", icono: "◉", nombre: "Monitoreo en vivo" },
   { ruta: "/resultados", icono: "◉", nombre: "Resultados" },
   { ruta: "/historial", icono: "▤", nombre: "Historial" },
   { ruta: "/aprende", icono: "✦", nombre: "Aprende" },
@@ -404,6 +410,15 @@ function ProtecKey() {
         <main className="pk-page">
           <Routes>
             <Route
+              path="/monitoreo"
+              element={
+                <>
+                  <LiveMonitor />
+                  <MLAlerts />
+                </>
+              }
+            />
+            <Route
               path="/"
               element={
                 <div className="pk-home">
@@ -775,6 +790,90 @@ function ProtecKey() {
                         </div>
                       </div>
 
+                      {Array.isArray(ultimoResultado.detection?.results) &&
+                        ultimoResultado.detection.results.length > 0 && (
+                          <section className="pk-results-chart">
+                            <h3>Detalle de predicciones</h3>
+
+                            <p>
+                              Clasificación y puntuación estimada de tráfico
+                              malicioso para cada registro analizado.
+                            </p>
+
+                            <div style={{ overflowX: "auto", marginTop: "16px" }}>
+                              <table
+                                style={{
+                                  width: "100%",
+                                  borderCollapse: "collapse",
+                                  textAlign: "left"
+                                }}
+                              >
+                                <thead>
+                                  <tr>
+                                    <th style={{ padding: "12px" }}>Registro</th>
+                                    <th style={{ padding: "12px" }}>Clasificación</th>
+                                    <th style={{ padding: "12px" }}>Puntuación</th>
+                                  </tr>
+                                </thead>
+
+                                <tbody>
+                                  {ultimoResultado.detection.results
+                                    .slice(0, 20)
+                                    .map((registro, indice) => {
+                                      const puntuacion = registro.malicious_probability;
+
+                                      const porcentaje =
+                                        puntuacion !== null &&
+                                        puntuacion !== undefined &&
+                                        Number.isFinite(Number(puntuacion))
+                                          ? `${(Number(puntuacion) * 100).toLocaleString(
+                                              "es-CO",
+                                              {
+                                                minimumFractionDigits: 2,
+                                                maximumFractionDigits: 2
+                                              }
+                                            )} %`
+                                          : "No disponible";
+
+                                      return (
+                                        <tr key={registro.index ?? indice}>
+                                          <td style={{ padding: "12px" }}>
+                                            #{(registro.index ?? indice) + 1}
+                                          </td>
+
+                                          <td style={{ padding: "12px" }}>
+                                            {registro.prediction === 1
+                                              ? "Potencialmente malicioso"
+                                              : registro.prediction === 0
+                                                ? "Normal"
+                                                : "No disponible"}
+                                          </td>
+
+                                          <td style={{ padding: "12px" }}>
+                                            <strong>{porcentaje}</strong>
+                                          </td>
+                                        </tr>
+                                      );
+                                    })}
+                                </tbody>
+                              </table>
+                            </div>
+
+                            {ultimoResultado.detection.results.length > 20 && (
+                              <p style={{ marginTop: "12px" }}>
+                                Se muestran los primeros 20 registros de{" "}
+                                {ultimoResultado.detection.results.length} analizados.
+                              </p>
+                            )}
+
+                            <small>
+                              Las puntuaciones son estimaciones del modelo,
+                              no confirmaciones de ataques.
+                            </small>
+                          </section>
+                        )}
+
+
                       <div className="pk-results-explanation">
                         <h3>¿Qué significa este resultado?</h3>
                         <p>
@@ -849,6 +948,10 @@ function ProtecKey() {
                       Consulta tus análisis por lotes e individuales.
                     </p>
                   </div>
+
+                  <NetworkHistory />
+
+                  <MLHistory />
 
                   <BatchHistory actualizar={actualizarLotes} />
 
@@ -927,7 +1030,9 @@ function ProtecKey() {
 function App() {
   return (
     <BrowserRouter>
-      <ProtecKey />
+      <LiveMonitorProvider>
+        <ProtecKey />
+      </LiveMonitorProvider>
     </BrowserRouter>
   );
 }

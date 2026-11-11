@@ -1,0 +1,197 @@
+
+/* PROTECKEY - HISTORIAL DE CONEXIONES */
+
+.pk-network-history {
+  margin-top: 28px;
+  padding: 28px;
+  background: #ffffff;
+  border: 1px solid #dfe7f3;
+  border-radius: 20px;
+  box-shadow: 0 8px 25px rgba(20, 43, 80, 0.05);
+}
+
+/* Encabezado */
+
+.pk-network-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 25px;
+}
+
+.pk-network-header h2 {
+  margin: 8px 0;
+  font-size: 23px;
+  color: #142b50;
+}
+
+.pk-network-header p {
+  margin: 0;
+  color: #64748b;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.pk-network-header button,
+.pk-network-pagination button {
+  padding: 11px 18px;
+  border: 1px solid #245fc0;
+  border-radius: 10px;
+  background: #245fc0;
+  color: #ffffff;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.pk-network-header button:hover:not(:disabled),
+.pk-network-pagination button:hover:not(:disabled) {
+  background: #174a9b;
+}
+
+.pk-network-history button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Tarjetas de estadísticas */
+
+.pk-network-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 15px;
+  margin-bottom: 25px;
+}
+
+.pk-network-stats > div {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+  background: #f8fbff;
+  border: 1px solid #dfe8f5;
+  border-radius: 15px;
+}
+
+.pk-network-stats span {
+  color: #64748b;
+  font-size: 13px;
+}
+
+.pk-network-stats strong {
+  color: #142b50;
+  font-size: 26px;
+  font-weight: 700;
+}
+
+/* Tabla */
+
+.pk-network-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid #e1e8f2;
+  border-radius: 14px;
+}
+
+.pk-network-table-wrapper table {
+  width: 100%;
+  min-width: 950px;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.pk-network-table-wrapper th {
+  padding: 16px 14px;
+  background: #edf4fb;
+  color: #142b50;
+  font-weight: 700;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.pk-network-table-wrapper td {
+  padding: 15px 14px;
+  color: #334155;
+  border-top: 1px solid #e8eef5;
+  white-space: nowrap;
+}
+
+.pk-network-table-wrapper tbody tr:hover {
+  background: #f3faf9;
+}
+
+/* Etiqueta de protocolo */
+
+.pk-network-protocol {
+  display: inline-block;
+  padding: 6px 10px;
+  background: #e5f7f3;
+  color: #087c70;
+  border: 1px solid #c4e9e2;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* Paginación */
+
+.pk-network-pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  margin-top: 22px;
+}
+
+.pk-network-pagination span {
+  color: #64748b;
+  font-size: 14px;
+}
+
+.pk-network-pagination > div {
+  display: flex;
+  gap: 10px;
+}
+
+/* Mensajes */
+
+.pk-network-message {
+  padding: 25px;
+  text-align: center;
+  color: #64748b;
+}
+
+.pk-network-error {
+  padding: 16px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  color: #b91c1c;
+}
+
+/* Adaptación a pantallas pequeñas */
+
+@media (max-width: 768px) {
+  .pk-network-history {
+    padding: 18px;
+  }
+
+  .pk-network-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .pk-network-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .pk-network-pagination {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .pk-network-pagination > div {
+    justify-content: space-between;
+  }
+}

@@ -1,0 +1,251 @@
+
+.pk-ml-alerts {
+  margin: 24px 0;
+  padding: 24px;
+  border: 1px solid #334155;
+  border-radius: 16px;
+  background: rgba(15, 23, 42, 0.55);
+  color: #e2e8f0;
+}
+
+.pk-ml-alerts-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.pk-ml-alerts-eyebrow {
+  color: #38bdf8;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+}
+
+.pk-ml-alerts-counter {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 120px;
+  padding: 16px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 12px;
+}
+
+.pk-ml-alerts-counter strong {
+  font-size: 30px;
+  color: #f87171;
+}
+
+.pk-ml-alerts-counter span,
+.pk-ml-alert-meta,
+.pk-ml-alerts-note {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.pk-ml-alerts-list {
+  display: grid;
+  gap: 12px;
+}
+
+.pk-ml-alert-item {
+  padding: 16px;
+  border: 1px solid rgba(248, 113, 113, 0.3);
+  border-left: 4px solid #f87171;
+  border-radius: 10px;
+  background: rgba(239, 68, 68, 0.06);
+}
+
+.pk-ml-alert-top,
+.pk-ml-alert-meta {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.pk-ml-alert-top span {
+  color: #f87171;
+  font-weight: 700;
+}
+
+.pk-ml-alert-item p {
+  overflow-wrap: anywhere;
+}
+
+.pk-ml-alerts-empty {
+  padding: 20px;
+  border: 1px dashed #475569;
+  border-radius: 10px;
+  color: #94a3b8;
+}
+
+.pk-ml-alerts-note {
+  margin-top: 20px;
+}
+
+
+/* Bot?n y ventana de detalles de detecciones ML */
+
+.pk-ml-detail-button {
+  margin-top: 14px;
+  padding: 9px 16px;
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid #38bdf8;
+  border-radius: 8px;
+  color: #7dd3fc;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.pk-ml-detail-button:hover {
+  background: rgba(56, 189, 248, 0.24);
+}
+
+.pk-ml-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(2, 6, 23, 0.82);
+}
+
+.pk-ml-modal {
+  width: min(760px, 100%);
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 26px;
+  background: #0f172a;
+  border: 1px solid #475569;
+  border-radius: 16px;
+  color: #e2e8f0;
+  box-shadow: 0 20px 70px rgba(0, 0, 0, 0.45);
+}
+
+.pk-ml-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.pk-ml-modal-header h2 {
+  margin: 6px 0 20px;
+}
+
+.pk-ml-modal-close {
+  border: 0;
+  background: transparent;
+  color: #cbd5e1;
+  font-size: 30px;
+  cursor: pointer;
+}
+
+.pk-ml-detail-probability {
+  display: grid;
+  gap: 10px;
+  margin: 8px 0 24px;
+  padding: 18px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 12px;
+}
+
+.pk-ml-detail-probability strong {
+  color: #f87171;
+  font-size: 28px;
+}
+
+.pk-ml-probability-track {
+  height: 9px;
+  background: #334155;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.pk-ml-probability-fill {
+  height: 100%;
+  background: #f87171;
+  border-radius: 10px;
+}
+
+.pk-ml-modal h3 {
+  margin: 22px 0 12px;
+  font-size: 16px;
+}
+
+.pk-ml-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.pk-ml-detail-grid > div {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  border: 1px solid #334155;
+  border-radius: 9px;
+  background: rgba(30, 41, 59, 0.6);
+  overflow-wrap: anywhere;
+}
+
+.pk-ml-detail-grid span,
+.pk-ml-metric span {
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+.pk-ml-detail-grid strong {
+  font-size: 14px;
+}
+
+.pk-ml-metrics {
+  display: grid;
+  gap: 8px;
+}
+
+.pk-ml-metric {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 12px;
+  border-bottom: 1px solid #334155;
+}
+
+.pk-ml-metric strong {
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.pk-ml-detail-disclaimer {
+  margin-top: 24px;
+  padding: 14px;
+  border-left: 3px solid #fbbf24;
+  background: rgba(251, 191, 36, 0.07);
+  color: #cbd5e1;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.pk-ml-detail-error {
+  color: #fca5a5;
+}
+
+@media (max-width: 600px) {
+  .pk-ml-modal {
+    padding: 18px;
+  }
+
+  .pk-ml-detail-grid {
+    grid-template-columns: 1fr;
+  }
+}
